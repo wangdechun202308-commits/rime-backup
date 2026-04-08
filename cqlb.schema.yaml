@@ -1,0 +1,198 @@
+schema:
+  schema_id: cqlb
+  name: "超强两笔"
+  version: "1.0"
+  author:
+    - 付东升
+  description: |
+    超强两笔。按 i 键临时拼音或者用拼音反查编码
+  dependencies:
+switches:
+  - name: ascii_mode
+    reset: 0
+    states: [ 中,英 ]
+  - name: zh_trad
+    reset: 0
+    states: [ 简,繁 ]
+#  - name: new_spelling
+#    reset: 1
+#    states: [ 隐,显 ]
+#  - name: rvl_zhuyin
+#    reset: 1
+#    states: [ 形,拼 ]
+  - name: GB2312
+    reset: 0
+    states: [ 扩,常 ]
+#  - name: new_hide_pinyin
+#    reset: 1
+#    states: [ 音,哑 ]
+  - name: single_char
+    reset: 0
+    states: [ 词,单 ]
+  - name: ascii_punct
+    reset: 0
+    states: [ 。，,．， ]
+  - name: full_shape
+    reset: 0
+    states: [ 半,全 ]
+engine:
+  filters:
+    - simplifier
+    - "reverse_lookup_filter@ci_reverse_lookup"
+ #   - lua_filter@new_spelling@spelling
+    - lua_filter@single_char
+    - lua_filter@*multiline*Multiline_filter
+    - uniquifier
+  processors:
+    - ascii_composer
+    - lua_processor@switch_processor
+    - recognizer
+    - lua_processor@enter_raw_en
+    - key_binder
+    - speller
+    - punctuator
+    - selector
+    - navigator
+    - express_editor
+  segmentors:
+    - ascii_segmentor
+    - matcher
+    - "affix_segmentor@mkst"
+    - "affix_segmentor@rvl_zhuyin"
+    - "affix_segmentor@rvlk1"
+    - abc_segmentor
+    - punct_segmentor
+    - fallback_segmentor
+  translators:
+    - punct_translator
+    - reverse_lookup_translator
+    - "table_translator@rvlk1"
+    - table_translator
+    - "table_translator@fixed"
+    - "table_translator@mkst"
+    - "table_translator@rvl_zhuyin"
+    - "history_translator@history"
+    - "lua_translator@helper"
+    - "lua_translator@time_date"
+    - lua_translator@calculator_translator
+speller:
+  alphabet: 'abcdefghijklmnopqrstuvwxyz;,./'
+  initials: 'abcdefghijklmnopqrstuvwxyz'
+  delimiter: "`"
+  auto_clear: max_length
+  auto_select: true 
+  auto_select_pattern: "(^[uv].$)|^.{4}$"
+translator:
+  dictionary: cqlb.extended
+  db_class: tabledb
+  initial_quality: 1000
+  enable_charset_filter: false
+  enable_sentence: false
+  enable_encoder: false
+  encode_commit_history: false
+  max_phrase_length: 4
+  enable_completion: true
+  enable_user_dict: false
+  disable_user_dict_for_patterns:
+    - "^[ivu].*$"
+    - "^.*$"
+  preedit_format:
+    - xform/^i(.*)/$1/
+    - xform/^v/z/
+  comment_format:
+    - xform/~/ /
+fixed:
+  db_class: tabledb
+  dictionary: cqlb.extended
+  disable_user_dict_for_patterns:
+    - "^.{1,3}$"
+  enable_charset_filter: false
+  enable_completion: false
+  enable_encoder: true
+  enable_sentence: false
+  enable_user_dict: true
+  encode_commit_history: false
+  initial_quality: 1000
+  max_phrase_length: 4
+mkst:
+  db_class: tabledb
+  dictionary: cqlb.extended
+  disable_user_dict_for_patterns:
+    - "^[ivu].*$"
+  enable_charset_filter: false
+  enable_completion: false
+  enable_encoder: false
+  enable_sentence: true
+  enable_user_dict: false
+  encode_commit_history: false
+  initial_quality: 10
+  max_phrase_length: 4
+  prefix: "`"
+  tag: mkst
+  tips: "〔精准造词〕"
+rvlk1:
+  dictionary: ipinyin
+  enable_completion: true
+  enable_sentence: false
+  enable_encoder: false
+  enable_user_dict: false
+  initial_quality: 1000
+ci_reverse_lookup:
+  dictionary: cqlb.extended
+  tips: "〔滤镜〕"
+  tags:
+    - rvlk2
+simplifier:
+  opencc_config: s2t.json
+  option_name: zh_trad
+#lua_reverse_db:
+#  spelling: spelling_lb
+#  code: spelling_lb
+recognizer:
+  import_preset: default
+  patterns:
+    mkst: "^[a-z,;/\\.]*`[a-z,;/\\.\\`]*$"
+    email: "^[A-Za-z][-_.0-9A-Za-z]*@.*$"
+    helper: '^help$'
+    punct: "^/([0-9]0?|[A-Za-z]+)$"
+    rvlk1: "^i[a-z;,./]*$"
+    rvlk2: "^i[a-z;,./]*$"
+    uppercase: "[A-Z][-_+.'0-9A-Za-z]*$"
+    url: "^(www[.]|https?:|ftp[.:]|mailto:|file:).*$"
+    expression: "^=.*$"
+history:
+  input: uj
+  size: 1
+  initial_quality: 1
+key_binder:
+  bindings:
+    - {send: Up, accept: Left, when: has_menu}
+    - {send: Down, accept: Right, when: has_menu}
+    - {send: Page_Up, accept: minus, when: has_menu}
+    - {send: Page_Down, accept: equal, when: has_menu}
+    - {send: Escape, accept: space, when: composing}
+    - {send: space, accept: space, when: has_menu}
+    - {toggle: zh_trad, accept: "Control+Shift+4", when: always}
+    - {toggle: zh_trad, accept: "Control+Shift+dollar", when: always}
+    - {toggle: zh_trad, accept: "Control+Shift+F", when: always}
+    - {toggle: new_spelling, accept: "Control+Shift+H", when: always}
+    - {toggle: new_hide_pinyin, accept: "Control+Shift+J", when: always}
+    - {toggle: single_char, accept: "Control+Shift+K", when: always}
+    - {toggle: GB2312, accept: "Control+Shift+U", when: always}
+    - {accept: Return, send: Escape, when: composing}
+    - {accept: Return, send: Escape, when: has_menu}
+    - {accept: KP_0, send: 0, when: composing}
+    - {accept: KP_1, send: 1, when: composing}
+    - {accept: KP_2, send: 2, when: composing}
+    - {accept: KP_3, send: 3, when: composing}
+    - {accept: KP_4, send: 4, when: composing}
+    - {accept: KP_5, send: 5, when: composing}
+    - {accept: KP_6, send: 6, when: composing}
+    - {accept: KP_7, send: 7, when: composing}
+    - {accept: KP_8, send: 8, when: composing}
+    - {accept: KP_9, send: 9, when: composing}
+    - {accept: KP_Decimal, send: period, when: composing}
+punctuator:
+  import_preset: symbols
+menu:
+  page_size: 6
